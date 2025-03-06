@@ -1,0 +1,222 @@
+openapi: '3.0.0'
+info:
+  title: go-server-with-new-relic
+  description: REST API definition for example go-service
+  version: 1.0.0
+  contact:
+    name: Nathan Bak
+    url: https://github.com/NathanBak/go-server-with-new-relic
+    
+tags:
+  - name: Health
+    description: Endpoints to advertise liveliness and readiness
+  - name: External
+    description: Endpoints used by customer devices.  JWTs are used for auth.
+      
+paths:
+  /livez:
+    get:
+      tags: [Health]
+      summary: Service Liveliness
+      description: Returns a 200 if the server is alive--intended for use by Kubernetes
+      operationId: livez
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: integer
+        "500":
+          $ref: "#/components/responses/InternalErrorResponse"
+
+  /readyz:
+    get:
+      tags: [Health]
+      summary: Service Readiness
+      description: Returns a 200 if the server is ready--intended for use by Kubernetes
+      operationId: readyz
+      responses:
+        "200":
+          $ref: "#/components/responses/MessageResponse"
+        "500":
+          $ref: "#/components/responses/InternalErrorResponse"
+          
+  /api/v1/widgets:
+    get:
+      tags: [Widget]
+      summary: All widget ids
+      description: Returns array of widget ids
+      operationId: listWidgets
+      responses:
+        "200":
+          $ref: "#/components/responses/MessageResponse"
+        "500":
+          $ref: "#/components/responses/InternalErrorResponse"
+    post:
+      tags: [Widget]
+      summary: Add widget
+      description: Stores the provided widget information
+      operationId: addWidget
+      requestBody:
+        description: Widget information
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WidgetInput"
+      responses:
+        "200":
+          $ref: "#/components/responses/WidgetResponse"
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "500":
+          $ref: "#/components/responses/InternalErrorResponse"
+
+  /api/v1/widgets/{widgetId}:
+    get:
+      tags: [Widget]
+      summary: Get widget
+      description: Returns widget information for the specified widget id
+      operationId: getWidget
+      parameters:
+        - $ref: "#/components/parameters/WidgetID"
+      responses:
+        "200":
+          $ref: "#/components/responses/WidgetResponse"
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+        "500":
+          $ref: "#/components/responses/InternalErrorResponse"
+        
+    delete:
+      tags: [Widget]
+      summary: Delete widget
+      description: Removes widget information from storage
+      operationId: deleteWidget
+      parameters:
+        - $ref: "#/components/parameters/WidgetID"
+      responses:
+        "200":
+          $ref: "#/components/responses/WidgetResponse"
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+        "500":
+          $ref: "#/components/responses/InternalErrorResponse"
+        
+
+components:
+
+  parameters:
+  
+    WidgetID:
+      in: path
+      name: widgetId
+      description: Id of the widget
+      required: true
+      schema:
+        type: string
+
+
+  responses:
+  
+    WidgetResponse:
+      description: "widget (200)"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Widget"
+  
+    MessageResponse:
+      description: "success (200)"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/MessageResponse"
+            
+    BadRequestResponse:
+      description: "bad request (400)"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+    NotFoundResponse:
+      description: "not found (404)"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+    InternalErrorResponse:
+      description: "internal server error (500)"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+  schemas:
+  
+    WidgetInput:
+      type: object
+      required:
+        - name
+        - color
+      properties:
+        name:
+          description: Name of widget
+          type: string
+          example: Nifty Thingy
+        color:
+          description: Color of widget
+          type: string
+          enum: [red, blue, green]
+      
+  
+    Widget:
+      description: Widget information
+      allOf:     # Combines the WidgetInput with other widget metadata
+        - $ref: '#/components/schemas/WidgetInput'
+        - type: object
+      properties:
+        id:
+          description: ID is a unique identifier
+          type: string
+          format: uuid
+        lastUpdated:
+          description: LastUpdated is a timestamp of when the widget entry was last modified
+          type: string
+          format: date-time
+
+    MessageResponse:
+      description: MessageResponse contains a message
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          description: Message is the error message
+          type: string
+          example: Don't worry, be happy!
+
+    ErrorResponse:
+      description: ErrorResponse contains the error mesage and code
+      type: object
+      required:
+        - errorCode
+        - message
+      properties:
+        errorCode:
+          description: ErrorCode is a unique string identifying the error
+          type: string
+          example: ERR-1234567890
+        message:
+          description: Message is the error message
+          type: string
+          example: hovercraft is full of eels
