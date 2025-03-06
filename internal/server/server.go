@@ -7,6 +7,9 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/newrelic/go-agent/v3/integrations/nrgorilla"
+
+	newrelic "github.com/newrelic/go-agent/v3/newrelic"
 )
 
 // A Server is a web server that extends http.Server.  It should be created with the New() function,
@@ -20,7 +23,7 @@ type Server struct {
 }
 
 // New creates, configures, and returns a new server instance.
-func New(cfg Config) (*Server, error) {
+func New(cfg Config, app *newrelic.Application) (*Server, error) {
 
 	s := &Server{
 		Server: http.Server{
@@ -38,6 +41,7 @@ func New(cfg Config) (*Server, error) {
 	}
 
 	router := mux.NewRouter().StrictSlash(true)
+	router.Use(nrgorilla.Middleware(app))
 	for _, route := range s.routes() {
 		wrappedHandler := s.requestWrapper(route.HandlerFunc, route.Name)
 		router.

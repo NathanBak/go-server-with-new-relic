@@ -11,6 +11,7 @@ import (
 
 	"github.com/NathanBak/cfgbuild"
 	"github.com/joho/godotenv"
+	"github.com/newrelic/go-agent/v3/newrelic"
 
 	"github.com/NathanBak/go-server-with-new-relic/internal/server"
 	"github.com/NathanBak/go-server-with-new-relic/pkg/storage"
@@ -21,6 +22,18 @@ func main() {
 	// read .env file and set env vars
 	_ = godotenv.Load()
 
+	app, err := newrelic.NewApplication(
+		newrelic.ConfigAppName("go-server-with-new-relic"),
+		newrelic.ConfigFromEnvironment(),
+		newrelic.ConfigDebugLogger(os.Stdout),
+		newrelic.ConfigAppLogForwardingEnabled(true),
+		newrelic.ConfigCodeLevelMetricsEnabled(true),
+		newrelic.ConfigCodeLevelMetricsPathPrefixes("go-agent/v3"),
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	// create and initialize config from env vars
 	builder := cfgbuild.Builder[*server.Config]{}
 	cfg, err := builder.Build()
@@ -30,7 +43,7 @@ func main() {
 
 	cfg.Storage = &storage.MapStorage[widget.Widget]{}
 
-	s, err := server.New(*cfg)
+	s, err := server.New(*cfg, app)
 	if err != nil {
 		log.Fatal(err)
 	}
