@@ -15,6 +15,11 @@ The server uses properties stored in a `.env` file.  To generate said file, from
 ### Running the Server
 From the project root run `go run .`
 
+### Building the Docker image
+From the project root run `docker build .`
+
+If you would prefer to use a pre-build image, see [https://hub.docker.com/repository/docker/bakchoy/go-server-with-new-relic/general](https://hub.docker.com/repository/docker/bakchoy/go-server-with-new-relic/general).
+
 ### Prerequisites
 - Go (see the [go.mod](https://github.com/NathanBak/go-server/blob/755e067fd4b192641c8478422a49549e316e137c/go.mod#L3) file for the correct version) 
 - Git
